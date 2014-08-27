@@ -11,6 +11,9 @@ import sys
 import cookielib
 import urlparse
 import json
+import os
+import zipfile
+import shutil
 
 reload(sys)
 sys.setdefaultencoding('utf-8') 
@@ -120,7 +123,7 @@ def get_book_json(src, gid, cid):
     pass
 
 def create_content(index, title, content):
-    temp_con=open('epub_template/content.html', 'r').read()
+    temp_con=open('content.html', 'r').read()
     temp_con = temp_con.replace("{{title}}",title).replace("{{content}}",content)
     open(index+'.html','w').write(temp_con)
     pass
@@ -132,19 +135,80 @@ def create_catalog(book_info):
         'navPointlist':['<navPoint id="%(contentid)s" playOrder="%(no)s"><navLabel><text>%(title)s</text></navLabel><content src="%(contentid)s.html"/></navPoint>',],
         'titlelist':['<li%(even_class_flag)s><a href="%(contentid)s.html">%(title)s</a></li>']
     }
+
+    no = 3
     for c in book_info['group']:
+        no+=1
+
+        contentid = c['index']
+        title = c['text']
+        even_class_flag=('',' class="even"')[(no-3)%2]
+
+        catalog['itemlist'].append(catalog['itemlist'][0] % {'contentid':contentid})
+        catalog['itemreflist'].append(catalog['itemreflist'][0] % {'contentid':contentid})
+        catalog['navPointlist'].append(catalog['navPointlist'][0] % {'contentid':contentid, 'title':title, 'no':str(no)})
+        catalog['titlelist'].append(catalog['titlelist'][0] % {'contentid':contentid, 'title':title, 'even_class_flag':even_class_flag})
+
+    def render(f_str):
+            if '%' in f_str:
+                f_str=f_str.replace('%','%%')
+            # f_str=sub('(\{\{[a-z]{1,20}\}\})',lambda x:"".join(['%','(',x.group(1)[2:-2],')','s']) , f_str, U)
+            return f_str
+
+    epub_path='../%s.epub' % book_info['title']
+    if os.path.exists(epub_path): os.remove(epub_path)
+
+    with file('catalog.html','r+') as cat_t, file('toc.ncx','r+') as toc_t, file('content.opf','r+') as con_t, file('title.xhtml','r+') as tit_t :
         
+        tit_str=tit_t.read()
+        tit_str=tit_str.replace('\r',"")
+        tit_t.seek(0)
+        tit_t.write(render(tit_str))
+        del tit_str
+        
+        cat_str=cat_t.read()
+        cat_str=cat_str.replace('\r',"")
+        cat_t.seek(0)
+        
+        toc_str=toc_t.read()
+        toc_t.seek(0)
+        
+        con_str=con_t.read()
+        con_t.seek(0)
+        
+        cat_str=cat_str.replace('{{for_titlelist}}',"\n".join(catalog['titlelist'][1:]))
+        cat_t.write(render(cat_str))
+        del cat_str
+        toc_str=toc_str.replace('{{for_navPointlist}}',"".join(catalog['navPointlist'][1:]))
+        toc_t.write(render(toc_str))
+        del toc_str
+        con_str=con_str.replace('{{for_itemlist}}',"".join(catalog['itemlist'][1:]))
+        con_str=con_str.replace('{{for_itemreflist}}',"".join(catalog['itemreflist'][1:]))
+        con_t.write(render(con_str))
+        del con_str
         pass
+    zip=zipfile.ZipFile(epub_path,'w',zipfile.ZIP_DEFLATED)
+    for b,ds,fs in os.walk('.'):
+        for ff in fs:
+            zip.write(os.path.join(b,ff))
+    zip.close()
 
     pass
 def get_book(bookname):
     book_info = get_book_info(bookname)
     gid = book_info['gid']
     chapters = book_info['group']
+
+    if os.path.exists(bookname):
+        shutil.rmtree(bookname)
+    shutil.copytree('epub_template',bookname)
+    os.chdir(bookname)
+
     for c in chapters:
         print c['text']
         content = get_book_json(c['href'], gid, c['cid'])
         create_content(c['index'], c['text'], content)
+        create_catalog(book_info)
         sys.exit(0)
 
     pass
