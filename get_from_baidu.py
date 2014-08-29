@@ -23,6 +23,24 @@ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 5_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Mobile/9B176 MicroMessenger/4.3.2'
 opener.addheaders = [('User-agent', user_agent)]
 
+g_book_info={}
+# self.book_id_f=book_link.group(1)
+# self.book_id=book_link.group(2)
+g_book_info['bookurl']='http://www.biquge.la/book/176/'
+g_book_info['bookid']='176'
+g_book_info['sitename']='笔趣阁'
+g_book_info['sitenameabbr']='笔趣阁'
+g_book_info['sitenamepinyin']='biquge'
+g_book_info['siteurl']='www.biquge.com'
+g_book_info['subject']='小说'
+g_book_info['bookname']='jjj'
+g_book_info['author']=''
+g_book_info['authorurl']=''#'https://www.google.com.hk/search?num=1&q=%s'
+g_book_info['description']=''
+g_book_info['img_url']='http://www.biquge.la/files/article/image/0/176/176s.jpg'
+g_book_info['rights']='Copyright (C) 书籍内容搜集于笔趣阁，用于轻度阅读。版权归原作者及原发布网站所有，不得用于商业复制、下载、传播'
+g_book_info['datetime']='2014-7-7'
+
 def open_url(url, data = None):
     if data:
         url = url + urllib.urlencode(data)
@@ -148,11 +166,16 @@ def create_catalog(book_info):
         catalog['itemreflist'].append(catalog['itemreflist'][0] % {'contentid':contentid})
         catalog['navPointlist'].append(catalog['navPointlist'][0] % {'contentid':contentid, 'title':title, 'no':str(no)})
         catalog['titlelist'].append(catalog['titlelist'][0] % {'contentid':contentid, 'title':title, 'even_class_flag':even_class_flag})
+        break
 
+    os.remove('content.html')
     def render(f_str):
             if '%' in f_str:
                 f_str=f_str.replace('%','%%')
-            # f_str=sub('(\{\{[a-z]{1,20}\}\})',lambda x:"".join(['%','(',x.group(1)[2:-2],')','s']) , f_str, U)
+            f_str=re.sub('(\{\{[a-z]{1,20}\}\})',lambda x:"".join(['%','(',x.group(1)[2:-2],')','s']) , f_str, re.U)
+            f_str=f_str % g_book_info
+            if '%%' in f_str:
+                f_str=f_str.replace('%%','%')
             return f_str
 
     epub_path='../%s.epub' % book_info['title']
@@ -163,6 +186,7 @@ def create_catalog(book_info):
         tit_str=tit_t.read()
         tit_str=tit_str.replace('\r',"")
         tit_t.seek(0)
+        tit_t.truncate()
         tit_t.write(render(tit_str))
         del tit_str
         
@@ -177,13 +201,16 @@ def create_catalog(book_info):
         con_t.seek(0)
         
         cat_str=cat_str.replace('{{for_titlelist}}',"\n".join(catalog['titlelist'][1:]))
+        cat_t.truncate()
         cat_t.write(render(cat_str))
         del cat_str
         toc_str=toc_str.replace('{{for_navPointlist}}',"".join(catalog['navPointlist'][1:]))
+        toc_t.truncate()
         toc_t.write(render(toc_str))
         del toc_str
         con_str=con_str.replace('{{for_itemlist}}',"".join(catalog['itemlist'][1:]))
         con_str=con_str.replace('{{for_itemreflist}}',"".join(catalog['itemreflist'][1:]))
+        con_t.truncate()
         con_t.write(render(con_str))
         del con_str
         pass
