@@ -15,23 +15,14 @@
 
 <body>
     <div class="cover">
-        <a href="{{bookurl}}" target="_blank" title="访问《{{bookname}}》web页面">
-            <img src="cover.jpg" alt="{{bookname}}" />
-        </a>
+        <img src="cover.jpg" alt="{{bookname}}" />
     </div>
     <div class="bookinfo">
         <ul>
-            <li><b>书名</b>：<a href="{{bookurl}}" target="_blank" title="访问《{{bookname}}》web页面">{{bookname}}</a>
-            </li>
-            <li><b>作者</b>：<a href="{{authorurl}}" target="_blank" title="访问 {{author}} 作家空间">{{author}}</a>
-            </li>
-            <li><b>主题</b>：{{subject}}</li>
+            <li><b>书名</b>：{{bookname}}</li>
+            <li><b>作者</b>：{{author}}</li>
             <li><b>简介</b>：
                 <pre>{{description}}</pre>
-            </li>
-        </ul>
-        <ul>
-            <li><b>{{sitename}}</b>：<a href="http://{{siteurl}}" target="_blank">{{siteurl}}</a>
             </li>
         </ul>
     </div>
