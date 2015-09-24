@@ -8,4 +8,5 @@ get_epub
 
 ===
 ###使用  
-python main.py 小说名
+python main.py 小说名  
+例如 `python main.py 琅琊榜` :)
