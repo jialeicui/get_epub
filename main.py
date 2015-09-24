@@ -54,22 +54,14 @@ class GetEpub(object):
         url = url[len('http://m.baidu.com'):]
         conn.request("GET", url)
         res = conn.getresponse()
-        res = res.getheaders()
-
-        iskey = 0
-        for r in res:
-            for k in r:
-                if iskey:
-                    return k
-                    pass
-                if k == 'location':
-                    iskey = 1
-                    pass
+        res = res.read()
+        url = re.search('url=(.*?)"', res).group(1)
+        return url
 
     def get_book_info(self, bookname):
         url = 'http://m.baidu.com/s?word=%s&tn=iphone' %(bookname)
         query = self.__open_url(url)
-        res = re.search('<div class="box-card">(.*?)</div>', query).group(1)
+        res = re.search('<div class="wm-box-cardContainer">(.*?)</div>', query).group(1)
         url = re.search('<a href="(.*?)"', res).group(1)
         url = HTMLParser.HTMLParser().unescape(url)
 
@@ -79,7 +71,8 @@ class GetEpub(object):
 
         book_src = param['src'][0]
         gid      = param['gid'][0]
-        baiduid  = param['baiduid'][0]
+        # baiduid  = param['baiduid'][0]
+        baiduid = 0
 
         data = {
             'srd':1,
@@ -218,7 +211,7 @@ class GetEpub(object):
             print c['text']
             content = self.get_book_json(c['href'], gid, c['cid'])
             self.__create_content(c['index'], c['text'], content)
-            break
+
         self.__create_catalog_and_book(book_info)
 
         #clean
